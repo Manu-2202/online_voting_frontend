@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aadhar-Based Automated Electronic Voting System Simulator</title>
+    <meta name="description" content="A decentralized automated polling booth simulator verified with Aadhar biometrics and multi-tier server logs.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- ========================================== -->
+        <!-- HEADER & NAVIGATION                        -->
+        <!-- ========================================== -->
+        <header class="app-header">
+            <div class="logo-section">
+                <div class="logo-icon">AV</div>
+                <div class="logo-text">
+                    <h1>AADHAR ELECTRONIC VOTING</h1>
+                    <p>AUTOMATED SECURE DEMOCRACY</p>
+                </div>
+            </div>
+            
+            <nav class="role-tabs">
+                <button class="tab-btn active" data-role="voter">
+                    <span>🗳️</span> Voter Simulator
+                </button>
+                <button class="tab-btn" data-role="admin">
+                    <span>🏢</span> Constituency Admin
+                </button>
+                <button class="tab-btn" data-role="super-admin">
+                    <span>👑</span> Super Admin Console
+                </button>
+                <button class="tab-btn" data-role="observer">
+                    <span>📽️</span> Zonal Observer
+                </button>
+            </nav>
+        </header>
+
+        <!-- ========================================== -->
+        <!-- MAIN CONTENT AREA                          -->
+        <!-- ========================================== -->
+        <main class="app-content">
+            
+            <!-- 1. VOTER VIEW SECTION -->
+            <section id="voter-view" class="view-section active">
+                <div class="voter-split-layout">
+                    
+                    <!-- Left: Booth Physical Sim Controls -->
+                    <div class="booth-controls-card glass-panel">
+                        <h2 style="font-size: 1.2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; margin-bottom:1rem;">Physical Booth Console</h2>
+                        
+                        <div class="form-group">
+                            <label for="voter-identity-select">SIMULATE VOTER ENTRY</label>
+                            <select id="voter-identity-select" class="form-input" onchange="handleVoterSelect()">
+                                <!-- Populated dynamically by JS -->
+                            </select>
+                        </div>
+
+                        <!-- Status Indicators -->
+                        <div class="indicator-lights">
+                            <div class="light-box">
+                                <div id="red-light" class="light-bulb red"></div>
+                                <span>Wait</span>
+                            </div>
+                            <div class="light-box">
+                                <div id="green-light" class="light-bulb green active"></div>
+                                <span>Proceed</span>
+                            </div>
+                        </div>
+
+                        <!-- Gates Simulator -->
+                        <div class="physical-gate-sim">
+                            <div id="entry-gate" class="gate-container">
+                                <div class="gate-label">ENTRY ACTUATOR (SOLENOID)</div>
+                                <div class="gate-doors">
+                                    <div class="gate-door left">◀</div>
+                                    <div class="gate-door right">▶</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Scanner 1: Fingerprint -->
+                        <div id="fingerprint-scanner" class="scanner-hardware">
+                            <div class="gate-label">AADHAR FP MODULE</div>
+                            <div class="scan-zone" onclick="startBiometricScan('fingerprint')">
+                                <div class="scanner-laser"></div>
+                                <span class="scan-icon">☝️</span>
+                            </div>
+                            <span style="font-size: 0.7rem; font-weight:700; color:var(--text-secondary);">TAP TO SCAN THUMB</span>
+                        </div>
+
+                        <!-- Scanner 2: IRIS -->
+                        <div id="iris-scanner" class="scanner-hardware">
+                            <div class="gate-label">AADHAR IRIS SCANNER</div>
+                            <div class="scan-zone" onclick="startBiometricScan('iris')">
+                                <div class="scanner-laser"></div>
+                                <span class="scan-icon">👁️</span>
+                            </div>
+                            <span style="font-size: 0.7rem; font-weight:700; color:var(--text-secondary);">TAP TO SCAN IRIS</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Dummy Screen Terminal Display -->
+                    <div class="glass-panel" style="overflow: hidden;">
+                        <div class="booth-terminal-display" style="background: rgba(4, 7, 18, 0.95); border: 4px solid #1e293b; border-radius: var(--border-radius-lg); height: 100%;">
+                            
+                            <!-- Screen State: Auth Required -->
+                            <div id="screen-auth" class="terminal-screen active" style="align-items: center; justify-content: center; gap: 1.5rem; text-align: center;">
+                                <div style="font-size: 4rem;">🔒</div>
+                                <h2>Automated Polling Station</h2>
+                                <p style="color:var(--text-secondary); max-width:400px; font-size:0.9rem;">
+                                    Please proceed to the entry gate, and scan either your **Left Thumbprint** or **IRIS** on the external physical scanner to verify identity.
+                                </p>
+                            </div>
+
+                            <!-- Screen State: E-Ballot -->
+                            <div id="screen-ballot" class="terminal-screen">
+                                <div class="terminal-header">
+                                    <h3>ELECTRONIC BALLOT SHEET</h3>
+                                    <span class="voter-identity-badge" style="color:var(--secondary);">AADHAR CONNECTED</span>
+                                </div>
+                                <p style="color:var(--text-secondary); margin-bottom: 1rem; font-size: 0.85rem;">
+                                    Verify your name on top. Touch/select the corresponding candidate button to place your vote.
+                                </p>
+                                <div id="ballot-candidates-list" class="candidate-selection-grid">
+                                    <!-- Loaded Dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- Screen State: Confirm Change Options -->
+                            <div id="screen-change" class="terminal-screen">
+                                <div class="terminal-header">
+                                    <h3>VOTE RE-EVALUATION OPTION</h3>
+                                </div>
+                                <div class="confirm-box">
+                                    <div style="font-size: 3rem;">🔄</div>
+                                    <div class="confirm-question">
+                                        You selected: <span id="change-selected-name" style="color:var(--secondary); font-weight:bold;">[Candidate]</span>.<br>
+                                        Do you want to change your vote to a different candidate?
+                                    </div>
+                                    <div class="confirm-actions">
+                                        <button class="btn btn-primary" onclick="confirmChangeDecision(true)">YES (Re-select)</button>
+                                        <button class="btn btn-outline" onclick="confirmChangeDecision(false)">NO (Confirm Selection)</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Screen State: Final Submit -->
+                            <div id="screen-submit-confirm" class="terminal-screen">
+                                <div class="terminal-header">
+                                    <h3>CONFIRM & RECORD VOTE</h3>
+                                </div>
+                                <div class="confirm-box">
+                                    <div style="font-size: 3rem;">📥</div>
+                                    <div class="confirm-question">
+                                        You are submitting your vote to: <span id="submit-selected-name" style="color:var(--secondary); font-weight:bold;">[Candidate]</span>.<br>
+                                        Confirming will lock and encrypt your ballot into local and state servers.
+                                    </div>
+                                    <div class="confirm-actions">
+                                        <button class="btn btn-success" onclick="submitFinalVote()">SUBMIT VOTE</button>
+                                        <button class="btn btn-outline" onclick="state.votingStep = 'e-ballot'; renderAll();">CANCEL</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Screen State: VVPAT Printout -->
+                            <div id="screen-vvpat" class="terminal-screen">
+                                <div class="terminal-header">
+                                    <h3>VVPAT PAPER AUDIT TRAIL</h3>
+                                </div>
+                                <div style="display: flex; flex-direction:column; align-items:center; gap:1.5rem; justify-content:center; flex:1;">
+                                    <p style="color:var(--text-secondary); text-align:center; max-width:450px; font-size:0.9rem;">
+                                        Your ballot is saved. The printer below is dispensing the confirmation slip. Drop it in the audit box.
+                                    </p>
+                                    
+                                    <!-- Thermal printer simulated box -->
+                                    <div class="vvpat-printer-card" style="width: 320px;">
+                                        <div class="printer-mouth"></div>
+                                        <div id="vvpat-receipt-slip" class="printed-slip">
+                                            <div id="vvpat-slip-placeholder"></div>
+                                        </div>
+                                        <div class="vvpat-status-txt">PRINTING RECEIPT...</div>
+                                    </div>
+
+                                    <button class="btn btn-success" onclick="dropSlipInBox()">Drop Slip in Audit Box</button>
+                                </div>
+                            </div>
+
+                            <!-- Screen State: Exit Verification -->
+                            <div id="screen-exit" class="terminal-screen" style="align-items: center; justify-content: center; gap: 1.5rem; text-align: center;">
+                                <div style="font-size: 4rem;">🚪</div>
+                                <h2>Exit Gate Validation Required</h2>
+                                <p style="color:var(--text-secondary); max-width:400px; font-size:0.9rem;">
+                                    Your vote has been verified and stored. Tap the **Exit Biometric Scanner** below to open the door and leave the booth.
+                                </p>
+                                
+                                <div id="exit-gate" class="gate-container" style="width: 250px;">
+                                    <div class="gate-label">EXIT ACTUATOR</div>
+                                    <div class="gate-doors">
+                                        <div class="gate-door left">◀</div>
+                                        <div class="gate-door right">▶</div>
+                                    </div>
+                                </div>
+
+                                <div id="exit-scanner" class="scanner-hardware" style="width: 200px;">
+                                    <div class="scan-zone" onclick="startExitBiometricScan()">
+                                        <div class="scanner-laser"></div>
+                                        <span class="scan-icon">☝️</span>
+                                    </div>
+                                    <span style="font-size: 0.7rem; font-weight:700; color:var(--text-secondary);">SCAN THUMB TO EXIT</span>
+                                </div>
+                            </div>
+
+                            <!-- Screen State: Completed -->
+                            <div id="screen-completed" class="terminal-screen" style="align-items: center; justify-content: center; gap: 1.5rem; text-align: center;">
+                                <div style="font-size: 4rem; color: var(--success);">✅</div>
+                                <h2>Voting Complete</h2>
+                                <p style="color:var(--text-secondary); max-width:400px; font-size:0.9rem;">
+                                    Thank you! Your vote has been recorded securely. The terminal has reset for the next voter profile.
+                                </p>
+                                <button class="btn btn-outline" onclick="resetVoterFlow(); renderAll();">Start Next voter</button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- 2. ADMIN PORTALS SECTION -->
+            <section id="admin-view" class="view-section">
+                <div class="admin-grid-layout">
+                    
+                    <!-- Sidebar Menu -->
+                    <div class="admin-sidebar glass-panel">
+                        <h2 style="font-size: 1.1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; margin-bottom:1rem; color:var(--primary);">Constituency Panel</h2>
+                        <button class="admin-menu-btn active" data-panel="nominations" onclick="switchAdminPanel('nominations')">
+                            📂 Nomination Inbox
+                        </button>
+                        <button class="admin-menu-btn" data-panel="booths" onclick="switchAdminPanel('booths')">
+                            🏢 Booth Setup & IPs
+                        </button>
+                        <button class="admin-menu-btn" data-panel="contestants" onclick="switchAdminPanel('contestants')">
+                            🗂️ Contestant Registry
+                        </button>
+                    </div>
+
+                    <!-- Panel Display -->
+                    <div class="glass-panel admin-panel-content">
+                        
+                        <!-- Panel: Nominations Audits -->
+                        <div id="admin-panel-nominations" class="admin-panel-section active">
+                            <h2>Candidate Nomination Inbox</h2>
+                            <p style="color:var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.85rem;">
+                                Auditing queue of submitted nominations. Verify payment transaction logs, PDFs, and candidate profiles before approving for ballot deployment.
+                            </p>
+                            <div class="data-table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nomination ID</th>
+                                            <th>Candidate Name</th>
+                                            <th>Party Affiliation</th>
+                                            <th>Aadhar Card</th>
+                                            <th>Security Deposit</th>
+                                            <th>Verification Status</th>
+                                            <th>Action Controls</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="nominations-table-body">
+                                        <!-- Loaded Dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Panel: Booth Setup -->
+                        <div id="admin-panel-booths" class="admin-panel-section">
+                            <h2>Booth Allocation & Terminal IP Config</h2>
+                            <p style="color:var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.85rem;">
+                                Registered physical and mobile polling station terminal gateways connected to constituency subnet.
+                            </p>
+                            <div class="data-table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Terminal ID</th>
+                                            <th>Geographic Location</th>
+                                            <th>Constituency Code</th>
+                                            <th>Terminal IP Address</th>
+                                            <th>CCTV Camera ID</th>
+                                            <th>Security Guard Officer</th>
+                                            <th>Operational State</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="booths-table-body">
+                                        <!-- Loaded Dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Register New Terminal Block -->
+                            <div style="margin-top:2.5rem; padding-top:2rem; border-top:1px solid var(--border-color);">
+                                <h3 style="margin-bottom: 1rem;">Register New Terminal Gateway (Physical / Mobile)</h3>
+                                <form onsubmit="createNewBooth(event)">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="new-booth-id">Terminal ID Code</label>
+                                            <input type="text" id="new-booth-id" class="form-input" placeholder="e.g. BOOTH-04 (MPS)" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="new-booth-location">Physical Location Name</label>
+                                            <input type="text" id="new-booth-location" class="form-input" placeholder="e.g. Government Junior College Room 2" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="new-booth-mla">MLA Constituency Code</label>
+                                            <input type="text" id="new-booth-mla" class="form-input" value="AP-094" readonly required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="new-booth-ip">Terminal Subnet IP Address</label>
+                                            <input type="text" id="new-booth-ip" class="form-input" placeholder="e.g. 192.168.10.8" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="new-booth-camera">Camera Feed ID Code</label>
+                                        <input type="text" id="new-booth-camera" class="form-input" placeholder="e.g. CAM-0922" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save & Configuration Register</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Panel: Final Contestants -->
+                        <div id="admin-panel-contestants" class="admin-panel-section">
+                            <h2>Approved Contestant Registry</h2>
+                            <p style="color:var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.85rem;">
+                                Finalized contestant ballots for MLA / MP election, sorted alphabetically as security policy mandate.
+                            </p>
+                            <div class="data-table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Ballot ID</th>
+                                            <th>Candidate Name</th>
+                                            <th>Party</th>
+                                            <th>Party Symbol</th>
+                                            <th>Contact Email</th>
+                                            <th>Registered Mobile</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="contestants-table-body">
+                                        <!-- Loaded Dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. SUPER ADMIN SECTION -->
+            <section id="super-admin-view" class="view-section">
+                <div class="voter-split-layout">
+                    
+                    <!-- Config Controls -->
+                    <div class="booth-controls-card glass-panel" style="gap: 1.25rem;">
+                        <h2 style="font-size: 1.2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; margin-bottom:0.5rem; color:var(--warning);">Global Configurations</h2>
+                        
+                        <form onsubmit="saveSuperSettings(event)">
+                            <div class="form-group">
+                                <label for="opt-timezone">SYSTEM TIMEZONE GMT OFFSET</label>
+                                <input type="text" id="opt-timezone" class="form-input" value="GMT+5:30" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="opt-start-time">ELECTION POLL START TIME</label>
+                                <input type="time" id="opt-start-time" class="form-input" value="07:00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="opt-end-time">ELECTION POLL END TIME</label>
+                                <input type="time" id="opt-end-time" class="form-input" value="18:00" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Save Timeline Config</button>
+                        </form>
+
+                        <div style="margin-top:1.5rem; display:flex; flex-direction:column; gap:1rem; border-top:1px solid var(--border-color); padding-top:1.5rem;">
+                            <div>
+                                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">CURRENT ELECTION STATE</span>
+                                <div style="font-size: 1.5rem; font-weight:800; margin-top:0.25rem;" id="super-election-status">ACTIVE</div>
+                            </div>
+                            
+                            <button class="btn btn-outline" style="border-color:var(--warning); color:var(--warning);" onclick="toggleElectionStatus()">
+                                Pause / Halt Election
+                            </button>
+                            
+                            <button class="btn btn-danger" onclick="resetSimulation()" style="margin-top: auto;">
+                                ⚠️ Reset System Database
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mathematical Auditing panel -->
+                    <div class="glass-panel" style="padding: 2.5rem;">
+                        <h2 style="margin-bottom: 0.5rem;">Electoral Log Mathematical Audit (NET1 = NRT2)</h2>
+                        <p style="color:var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.85rem;">
+                            Comparing cumulative local terminal tallies (NET1) directly with central Election Commission server database (NRT2) for mismatch audit anomalies.
+                        </p>
+                        
+                        <!-- Verification banner -->
+                        <div id="audit-integrity-status" class="voter-status-alert success" style="margin-bottom: 1.5rem;">
+                            <!-- Populated Dynamically -->
+                        </div>
+
+                        <div id="math-audit-log-box" class="data-table-container">
+                            <!-- Populated Dynamically -->
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- 4. MONITORING STATION (ZONAL OBSERVER) -->
+            <section id="observer-view" class="view-section">
+                <!-- Stats Overview -->
+                <div class="stats-cards-grid">
+                    <div class="stats-card glass-panel">
+                        <span class="stats-label">Total Votes Cast</span>
+                        <div class="stats-val" id="obs-stat-voted">0</div>
+                    </div>
+                    <div class="stats-card glass-panel">
+                        <span class="stats-label">Aggregated Turnout %</span>
+                        <div class="stats-val" id="obs-stat-turnout">0%</div>
+                    </div>
+                    <div class="stats-card glass-panel">
+                        <span class="stats-label">Configured Stations</span>
+                        <div class="stats-val" id="obs-stat-booths">0 Active</div>
+                    </div>
+                    <div class="stats-card glass-panel">
+                        <span class="stats-label">Threat Alerts</span>
+                        <div class="stats-val" style="color:var(--success);">0 Triggered</div>
+                    </div>
+                </div>
+
+                <div class="voter-split-layout" style="grid-template-columns: 1fr 1fr;">
+                    
+                    <!-- Left: Tally statistics -->
+                    <div class="glass-panel" style="padding: 2rem;">
+                        <h2>Live Candidate Tallies</h2>
+                        <p style="color:var(--text-secondary); margin-bottom:1.5rem; font-size:0.85rem;">
+                            Constituency votes logged and synced in real-time.
+                        </p>
+                        <div class="data-table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Contestant</th>
+                                        <th>Party Name</th>
+                                        <th>Symbol</th>
+                                        <th>Polled Votes</th>
+                                        <th>Tally Bar</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="observer-tally-body">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Right: CCTV Camera surveillance feeds -->
+                    <div class="glass-panel" style="padding: 2rem;">
+                        <h2>Active CCTV Camera Feeds</h2>
+                        <p style="color:var(--text-secondary); margin-bottom:1.5rem; font-size:0.85rem;">
+                            Live monitoring surveillance links at polling stations for security validation.
+                        </p>
+                        <div id="observer-cctv-grid" class="cctv-grid">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- BOTTOM HARDWARE / SYSTEM LOGS VIEW         -->
+            <!-- ========================================== -->
+            <footer class="logs-container glass-panel">
+                <div class="logs-header">
+                    <h3 style="font-size: 1rem; color:var(--text-secondary); font-weight:700;">🖥️ SYSTEM TRANSACTION & LOGS</h3>
+                    <button class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem;" onclick="clearLogs()">Clear Console</button>
+                </div>
+                <div id="system-logs-list" class="logs-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </footer>
+
+        </main>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
