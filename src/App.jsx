@@ -1513,11 +1513,16 @@ function App() {
       {/* HEADER & NAVIGATION                        */}
       {/* ========================================== */}
       <header className="app-header">
-        <div className="logo-section">
-          <div className="logo-icon">AV</div>
-          <div className="logo-text">
-            <h1>{t.title}</h1>
-            <p>{t.subtitle}</p>
+        <div className="header-brand">
+          <div className="brand-badge">
+            <span style={{ fontSize: '1.25rem' }}>🏛️</span>
+          </div>
+          <div className="brand-info">
+            <div className="brand-title">
+              <span>AADHAAR</span>
+              <span className="brand-tag">VOTEX</span>
+            </div>
+            <span className="brand-subtitle">{t.subtitle || 'Automated Secure Democracy'}</span>
           </div>
         </div>
 
@@ -1532,43 +1537,13 @@ function App() {
             <span>🏆</span> {t.resDecl}
           </button>
           <a href="/admin" style={{ textDecoration: 'none' }}>
-            <button className="tab-btn">
+            <button type="button" className="tab-btn">
               <span>🔐</span> Admin Portal
             </button>
           </a>
         </nav>
 
         <div className="header-actions">
-          {userRole === 'superadmin' && (
-            <select 
-              value={activeElectionType} 
-              onChange={(e) => {
-                setActiveElectionType(e.target.value);
-                const firstSymbol = getSymbolsForType(e.target.value)[0];
-                if (firstSymbol) setNomPartySymbol(firstSymbol.symbol);
-                addSysLog(`Active Election Type switched to: ${e.target.value.toUpperCase()}`, 'info');
-                const matched = electionTypes.find(et => et.id === e.target.value);
-                if (matched) speakText(`Switched election to ${matched.name}`);
-              }}
-              className="form-input"
-              style={{ 
-                padding: '0.4rem 1.5rem 0.4rem 0.75rem', 
-                width: 'auto', 
-                fontSize: '0.75rem', 
-                borderRadius: '20px', 
-                background: 'rgba(255,255,255,0.05)', 
-                border: '1px solid var(--border-color)', 
-                color: '#fff',
-                cursor: 'pointer',
-                marginRight: '8px'
-              }}
-            >
-              {electionTypes.map(et => (
-                <option key={et.id} value={et.id}>🗳️ {et.name}</option>
-              ))}
-            </select>
-          )}
-
           {/* Language Selector */}
           <select
             value={lang}
@@ -1578,30 +1553,21 @@ function App() {
               localStorage.setItem('app_lang', newLang);
               addSysLog(`Language changed to: ${newLang.toUpperCase()}`, 'info');
             }}
-            style={{
-              padding: '0.45rem 0.8rem',
-              borderRadius: '20px',
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid var(--border-color)',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: '0.78rem',
-              cursor: 'pointer',
-              outline: 'none'
-            }}
+            className="header-select"
+            title="Select Language"
           >
-            <option value="en" style={{ background: '#0f172a', color: '#fff' }}>🇺🇸 US EN</option>
-            <option value="te" style={{ background: '#0f172a', color: '#fff' }}>🇮🇳 IN తెలుగు</option>
-            <option value="hi" style={{ background: '#0f172a', color: '#fff' }}>🇮🇳 IN हिन्दी</option>
+            <option value="en" style={{ background: '#0f172a', color: '#fff' }}>🌐 English</option>
+            <option value="te" style={{ background: '#0f172a', color: '#fff' }}>🇮🇳 తెలుగు (Telugu)</option>
+            <option value="hi" style={{ background: '#0f172a', color: '#fff' }}>🇮🇳 हिन्दी (Hindi)</option>
           </select>
 
-          <button className="header-btn sound" onClick={() => setSoundEnabled(!soundEnabled)}>
-            <span>{soundEnabled ? `🔊 ${t.sound}: ON` : `🔇 ${t.sound}: OFF`}</span>
+          <button className="header-btn sound" onClick={() => setSoundEnabled(!soundEnabled)} title="Toggle Audio">
+            <span>{soundEnabled ? `🔊 ${t.sound}` : `🔇 Muted`}</span>
           </button>
-          <button className="header-btn simulate" onClick={triggerSimulation}>
+          <button className="header-btn simulate" onClick={triggerSimulation} title="Simulate 25 Votes">
             <span>⚡ {t.simulate}</span>
           </button>
-          <button className="header-btn reset" onClick={resetSimulation}>
+          <button className="header-btn reset" onClick={resetSimulation} title="Reset Database">
             <span>🔄 {t.reset}</span>
           </button>
           {userRole && (
