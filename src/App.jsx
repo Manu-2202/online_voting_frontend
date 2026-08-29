@@ -637,7 +637,7 @@ function App() {
   const [adminPanel, setAdminPanel] = useState('nominations');
   const [usingBackend, setUsingBackend] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [lang, setLang] = useState('en');
+  const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'en');
   const [electionTypes, setElectionTypes] = useState([]);
   const [activeElectionType, setActiveElectionType] = useState('general');
   const [newElecId, setNewElecId] = useState('');
@@ -652,11 +652,22 @@ function App() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const langMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target)) {
+        setShowLangMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const LANG_OPTIONS = [
-    { code: 'en', flag: '🇺🇸', label: 'English',   short: 'EN' },
-    { code: 'te', flag: '🇮🇳', label: 'తెలుగు', short: 'TE' },
-    { code: 'hi', flag: '🇮🇳', label: 'हिन्दी',   short: 'HI' }
+    { code: 'en', flag: '🌐', label: 'English',   short: 'English' },
+    { code: 'te', flag: '🇮🇳', label: 'తెలుగు',   short: 'తెలుగు' },
+    { code: 'hi', flag: '🇮🇳', label: 'हिन्दी',    short: 'हिन्दी' }
   ];
   const activeLang = LANG_OPTIONS.find(l => l.code === lang) || LANG_OPTIONS[0];
 
@@ -1486,7 +1497,7 @@ function App() {
   };
 
   const winInfo = calculateWinnerInfo();
-  const t = TRANSLATIONS[lang];
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
 
   return (
     <div className="app-container">
@@ -1495,26 +1506,43 @@ function App() {
       {/* ========================================== */}
       <header className="app-header">
         <div className="logo-section">
-          <div className="logo-icon">AV</div>
+          <div className="logo-icon-shield">
+            <span>🏛️</span>
+          </div>
           <div className="logo-text">
-            <h1>{t.title}</h1>
-            <p>{t.subtitle}</p>
+            <div className="logo-title-row">
+              <span className="logo-brand">AADHAAR</span>
+              <span className="logo-badge">VOTEX</span>
+            </div>
+            <p className="logo-subtitle">{t.subtitle || 'Automated Polling Station'}</p>
           </div>
         </div>
 
         <nav className="role-tabs">
-          <button className={`tab-btn ${activeTab === 'voter' ? 'active' : ''}`} onClick={() => handleTabClick('voter')}>
-            <span>🗳️</span> {t.kiosk}
+          <button
+            type="button"
+            className={`tab-btn ${activeTab === 'voter' ? 'active' : ''}`}
+            onClick={() => handleTabClick('voter')}
+          >
+            <span className="tab-btn-icon">🗳️</span> {t.kiosk}
           </button>
-          <button className={`tab-btn ${activeTab === 'observer' ? 'active' : ''}`} onClick={() => handleTabClick('observer')}>
-            <span>📽️</span> {t.commandCenter}
+          <button
+            type="button"
+            className={`tab-btn ${activeTab === 'observer' ? 'active' : ''}`}
+            onClick={() => handleTabClick('observer')}
+          >
+            <span className="tab-btn-icon">📽️</span> {t.commandCenter}
           </button>
-          <button className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`} onClick={() => handleTabClick('results')}>
-            <span>🏆</span> {t.resDecl}
+          <button
+            type="button"
+            className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`}
+            onClick={() => handleTabClick('results')}
+          >
+            <span className="tab-btn-icon">🏆</span> {t.resDecl}
           </button>
           <a href="/admin" style={{ textDecoration: 'none' }}>
-            <button className="tab-btn">
-              <span>🔐</span> Admin Portal
+            <button type="button" className="tab-btn">
+              <span className="tab-btn-icon">🔐</span> Admin Portal
             </button>
           </a>
         </nav>
@@ -1525,7 +1553,6 @@ function App() {
               value={activeElectionType} 
               onChange={(e) => {
                 setActiveElectionType(e.target.value);
-                // Reset party symbol to first option of the new election type
                 const firstSymbol = getSymbolsForType(e.target.value)[0];
                 if (firstSymbol) setNomPartySymbol(firstSymbol.symbol);
                 addSysLog(`Active Election Type switched to: ${e.target.value.toUpperCase()}`, 'info');
@@ -1534,15 +1561,15 @@ function App() {
               }}
               className="form-input"
               style={{ 
-                padding: '0.4rem 1.5rem 0.4rem 0.75rem', 
+                height: '38px',
+                padding: '0 0.85rem', 
                 width: 'auto', 
-                fontSize: '0.75rem', 
-                borderRadius: '20px', 
+                fontSize: '0.8rem', 
+                borderRadius: '10px', 
                 background: 'rgba(255,255,255,0.05)', 
                 border: '1px solid var(--border-color)', 
                 color: '#fff',
-                cursor: 'pointer',
-                marginRight: '8px'
+                cursor: 'pointer'
               }}
             >
               {electionTypes.map(et => (
@@ -1552,79 +1579,80 @@ function App() {
           )}
 
           {/* Custom Language Selector */}
-          <div style={{ position: 'relative' }}>
+          <div className="lang-selector-container" ref={langMenuRef}>
             <button
-              onClick={() => setShowLangMenu(v => !v)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '5px',
-                padding: '0.35rem 0.7rem',
-                borderRadius: '20px',
-                background: showLangMenu ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.07)',
-                border: '1px solid rgba(255,255,255,0.18)',
-                color: '#fff', cursor: 'pointer', fontWeight: 700,
-                fontSize: '0.82rem', letterSpacing: '0.04em',
-                transition: 'background 0.2s'
+              type="button"
+              className={`lang-btn-trigger ${showLangMenu ? 'active' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowLangMenu(v => !v);
               }}
               title="Select Language"
             >
-              <span style={{ fontSize: '1rem' }}>{activeLang.flag}</span>
+              <span>{activeLang.flag}</span>
               <span>{activeLang.short}</span>
-              <span style={{ fontSize: '0.55rem', opacity: 0.55, marginLeft: '2px' }}>{showLangMenu ? '▴' : '▾'}</span>
+              <span style={{ fontSize: '0.6rem', opacity: 0.7, marginLeft: '2px' }}>{showLangMenu ? '▲' : '▼'}</span>
             </button>
 
             {showLangMenu && (
-              <div
-                style={{
-                  position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-                  background: 'linear-gradient(135deg, rgba(15,23,42,0.98), rgba(30,41,59,0.98))',
-                  border: '1px solid rgba(99,102,241,0.35)',
-                  borderRadius: '14px', overflow: 'hidden',
-                  minWidth: '160px', zIndex: 999,
-                  boxShadow: '0 12px 40px rgba(0,0,0,0.5)'
-                }}
-              >
+              <div className="lang-dropdown-menu">
                 {LANG_OPTIONS.map(opt => (
                   <button
                     key={opt.code}
-                    onClick={() => {
+                    type="button"
+                    className={`lang-option-btn ${lang === opt.code ? 'selected' : ''}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       setLang(opt.code);
+                      localStorage.setItem('app_lang', opt.code);
                       setShowLangMenu(false);
-                      addSysLog(`Language changed to: ${opt.code.toUpperCase()}`, 'info');
+                      addSysLog(`Language changed to: ${opt.label} (${opt.code.toUpperCase()})`, 'info');
                     }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '10px',
-                      width: '100%', padding: '0.65rem 1rem',
-                      background: lang === opt.code ? 'rgba(99,102,241,0.2)' : 'transparent',
-                      border: 'none',
-                      borderBottom: '1px solid rgba(255,255,255,0.05)',
-                      color: lang === opt.code ? '#a5b4fc' : '#e2e8f0',
-                      cursor: 'pointer', fontSize: '0.88rem', fontWeight: lang === opt.code ? 700 : 400,
-                      textAlign: 'left', transition: 'background 0.15s'
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.12)'}
-                    onMouseLeave={e => e.currentTarget.style.background = lang === opt.code ? 'rgba(99,102,241,0.2)' : 'transparent'}
                   >
-                    <span style={{ fontSize: '1.2rem' }}>{opt.flag}</span>
-                    <span>{opt.label}</span>
-                    {lang === opt.code && <span style={{ marginLeft: 'auto', fontSize: '0.7rem' }}>✓</span>}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>{opt.flag}</span>
+                      <span>{opt.label}</span>
+                    </span>
+                    {lang === opt.code && <span>✓</span>}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          <button className="header-btn sound" onClick={() => setSoundEnabled(!soundEnabled)}>
-            <span>{soundEnabled ? `🔊 ${t.sound}: ON` : `🔇 ${t.sound}: OFF`}</span>
+          <button
+            type="button"
+            className="header-btn sound"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            title="Toggle Sound"
+          >
+            <span>{soundEnabled ? `🔊 ${t.sound}` : `🔇 Muted`}</span>
           </button>
-          <button className="header-btn simulate" onClick={triggerSimulation}>
+          <button
+            type="button"
+            className="header-btn simulate"
+            onClick={triggerSimulation}
+            title="Simulate 25 Votes"
+          >
             <span>⚡ {t.simulate}</span>
           </button>
-          <button className="header-btn reset" onClick={resetSimulation}>
+          <button
+            type="button"
+            className="header-btn reset"
+            onClick={resetSimulation}
+            title="Reset Database"
+          >
             <span>🔄 {t.reset}</span>
           </button>
           {userRole && (
-            <button className="header-btn" onClick={handleLogout} style={{ background: 'rgba(255,23,68,0.15)', border: '1px solid rgba(255,23,68,0.4)', color: 'var(--danger)' }}>
-              <span>🚪 Logout ({userRole})</span>
+            <button
+              type="button"
+              className="header-btn"
+              onClick={handleLogout}
+              style={{ background: 'rgba(255,23,68,0.15)', border: '1px solid rgba(255,23,68,0.4)', color: 'var(--danger)' }}
+            >
+              <span>🚪 Logout</span>
             </button>
           )}
         </div>
