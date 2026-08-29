@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './style.css';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'https://online-voting-backend-duwm.onrender.com';
+
 const TRANSLATIONS = {
   en: {
     title: "AADHAR ELECTRONIC VOTING",
@@ -762,7 +764,7 @@ function App() {
     addSysLog('Initiating batch simulation of 25 votes...', 'info');
     if (usingBackend) {
       try {
-        const res = await fetch('/api/super/simulate', {
+        const res = await fetch(`${API_BASE}/api/super/simulate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ election_type: activeElectionType })
@@ -847,7 +849,7 @@ function App() {
 
   const syncData = async () => {
     try {
-      const res = await fetch('/api/settings');
+      const res = await fetch(`${API_BASE}/api/settings`);
       if (res.ok) {
         const settings = await res.json();
         setTimezone(settings.timezone || 'GMT+5:30');
@@ -855,12 +857,12 @@ function App() {
         setEndTime(settings.end_time || '18:00');
         setElectionStatus(settings.status || 'ACTIVE');
 
-        setVoters(await (await fetch('/api/voters')).json());
-        setNominations(await (await fetch('/api/nominations')).json());
-        setBooths(await (await fetch('/api/booths')).json());
-        setPolls(await (await fetch('/api/polls')).json());
+        setVoters(await (await fetch(`${API_BASE}/api/voters`)).json());
+        setNominations(await (await fetch(`${API_BASE}/api/nominations`)).json());
+        setBooths(await (await fetch(`${API_BASE}/api/booths`)).json());
+        setPolls(await (await fetch(`${API_BASE}/api/polls`)).json());
 
-        const typesRes = await fetch('/api/election-types');
+        const typesRes = await fetch(`${API_BASE}/api/election-types`);
         if (typesRes.ok) {
           setElectionTypes(await typesRes.json());
         }
@@ -918,7 +920,7 @@ function App() {
 
       if (usingBackend) {
         try {
-          const res = await fetch('/api/voters/auth', {
+          const res = await fetch(`${API_BASE}/api/voters/auth`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ aadhar_id: currentVoter.aadhar_id })
@@ -990,7 +992,7 @@ function App() {
 
     if (usingBackend) {
       try {
-        const res = await fetch('/api/vote', {
+        const res = await fetch(`${API_BASE}/api/vote`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1090,7 +1092,7 @@ function App() {
   const auditNomination = async (id, decision) => {
     if (usingBackend) {
       try {
-        const res = await fetch('/api/nominations/audit', {
+        const res = await fetch(`${API_BASE}/api/nominations/audit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nomination_id: id, status: decision })
@@ -1126,7 +1128,7 @@ function App() {
 
     if (usingBackend) {
       try {
-        const res = await fetch('/api/election-types', {
+        const res = await fetch(`${API_BASE}/api/election-types`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -1188,7 +1190,7 @@ function App() {
 
     if (usingBackend) {
       try {
-        const res = await fetch('/api/nominations', {
+        const res = await fetch(`${API_BASE}/api/nominations`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -1259,7 +1261,7 @@ function App() {
 
     if (usingBackend) {
       try {
-        const res = await fetch('/api/booths', {
+        const res = await fetch(`${API_BASE}/api/booths`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newBooth)
@@ -1295,7 +1297,7 @@ function App() {
     e.preventDefault();
     if (usingBackend) {
       try {
-        await fetch('/api/settings', {
+        await fetch(`${API_BASE}/api/settings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ timezone, start_time: startTime, end_time: endTime })
@@ -1315,7 +1317,7 @@ function App() {
     const nextStatus = electionStatus === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
     if (usingBackend) {
       try {
-        await fetch('/api/settings', {
+        await fetch(`${API_BASE}/api/settings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: nextStatus })
@@ -1355,7 +1357,7 @@ function App() {
     if (confirm('Are you sure you want to clear current polls database and reset all voter statuses?')) {
       if (usingBackend) {
         try {
-          await fetch('/api/super/reset', { method: 'POST' });
+          await fetch(`${API_BASE}/api/super/reset`, { method: 'POST' });
           addSysLog('MongoDB Database collections cleared and re-seeded successfully.', 'warning');
           await syncData();
         } catch (e) {
