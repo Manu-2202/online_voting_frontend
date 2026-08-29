@@ -1514,180 +1514,99 @@ function App() {
       {/* ========================================== */}
       <header className="app-header">
         <div className="logo-section">
-          <div className="logo-icon-shield">
-            <span>🏛️</span>
-          </div>
+          <div className="logo-icon">AV</div>
           <div className="logo-text">
-            <div className="logo-title-row">
-              <span className="logo-brand">AADHAAR</span>
-              <span className="logo-badge">VOTEX</span>
-            </div>
-            <p className="logo-subtitle">{t.subtitle || 'Automated Polling Station'}</p>
+            <h1>{t.title}</h1>
+            <p>{t.subtitle}</p>
           </div>
         </div>
 
         <nav className="role-tabs">
-          <button
-            type="button"
-            className={`tab-btn ${activeTab === 'voter' ? 'active' : ''}`}
-            onClick={() => handleTabClick('voter')}
-          >
-            <span className="tab-btn-icon">🗳️</span> {t.kiosk}
+          <button className={`tab-btn ${activeTab === 'voter' ? 'active' : ''}`} onClick={() => handleTabClick('voter')}>
+            <span>🗳️</span> {t.kiosk}
           </button>
-          <button
-            type="button"
-            className={`tab-btn ${activeTab === 'observer' ? 'active' : ''}`}
-            onClick={() => handleTabClick('observer')}
-          >
-            <span className="tab-btn-icon">📽️</span> {t.commandCenter}
+          <button className={`tab-btn ${activeTab === 'observer' ? 'active' : ''}`} onClick={() => handleTabClick('observer')}>
+            <span>📽️</span> {t.commandCenter}
           </button>
-          <button
-            type="button"
-            className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`}
-            onClick={() => handleTabClick('results')}
-          >
-            <span className="tab-btn-icon">🏆</span> {t.resDecl}
-          </button>
-          <button
-            type="button"
-            className={`tab-btn ${activeTab === 'admin' ? 'active' : ''}`}
-            onClick={() => handleTabClick('admin')}
-          >
-            <span className="tab-btn-icon">📋</span> {t.nomPortal}
-          </button>
-          <button
-            type="button"
-            className={`tab-btn ${activeTab === 'super-admin' ? 'active' : ''}`}
-            onClick={() => handleTabClick('super-admin')}
-          >
-            <span className="tab-btn-icon">👑</span> {t.superAdminConsole || 'Super Admin'}
+          <button className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`} onClick={() => handleTabClick('results')}>
+            <span>🏆</span> {t.resDecl}
           </button>
           <a href="/admin" style={{ textDecoration: 'none' }}>
-            <button type="button" className="tab-btn">
-              <span className="tab-btn-icon">🏢</span> Admin Portal
+            <button className="tab-btn">
+              <span>🔐</span> Admin Portal
             </button>
           </a>
         </nav>
 
         <div className="header-actions">
-          <select 
-            value={activeElectionType} 
+          {userRole === 'superadmin' && (
+            <select 
+              value={activeElectionType} 
+              onChange={(e) => {
+                setActiveElectionType(e.target.value);
+                const firstSymbol = getSymbolsForType(e.target.value)[0];
+                if (firstSymbol) setNomPartySymbol(firstSymbol.symbol);
+                addSysLog(`Active Election Type switched to: ${e.target.value.toUpperCase()}`, 'info');
+                const matched = electionTypes.find(et => et.id === e.target.value);
+                if (matched) speakText(`Switched election to ${matched.name}`);
+              }}
+              className="form-input"
+              style={{ 
+                padding: '0.4rem 1.5rem 0.4rem 0.75rem', 
+                width: 'auto', 
+                fontSize: '0.75rem', 
+                borderRadius: '20px', 
+                background: 'rgba(255,255,255,0.05)', 
+                border: '1px solid var(--border-color)', 
+                color: '#fff',
+                cursor: 'pointer',
+                marginRight: '8px'
+              }}
+            >
+              {electionTypes.map(et => (
+                <option key={et.id} value={et.id}>🗳️ {et.name}</option>
+              ))}
+            </select>
+          )}
+
+          {/* Language Selector */}
+          <select
+            value={lang}
             onChange={(e) => {
-              setActiveElectionType(e.target.value);
-              const firstSymbol = getSymbolsForType(e.target.value)[0];
-              if (firstSymbol) setNomPartySymbol(firstSymbol.symbol);
-              addSysLog(`Active Election Type switched to: ${e.target.value.toUpperCase()}`, 'info');
-              const matched = electionTypes.find(et => et.id === e.target.value);
-              if (matched) speakText(`Switched election to ${matched.name}`);
+              const newLang = e.target.value;
+              setLang(newLang);
+              localStorage.setItem('app_lang', newLang);
+              addSysLog(`Language changed to: ${newLang.toUpperCase()}`, 'info');
             }}
-            className="form-input"
-            style={{ 
-              height: '38px',
-              padding: '0 0.85rem', 
-              width: 'auto', 
-              fontSize: '0.8rem', 
-              borderRadius: '10px', 
-              background: 'rgba(255,255,255,0.05)', 
-              border: '1px solid var(--border-color)', 
+            style={{
+              padding: '0.45rem 0.8rem',
+              borderRadius: '20px',
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid var(--border-color)',
               color: '#fff',
-              cursor: 'pointer'
+              fontWeight: 700,
+              fontSize: '0.78rem',
+              cursor: 'pointer',
+              outline: 'none'
             }}
           >
-            {electionTypes.map(et => (
-              <option key={et.id} value={et.id}>🗳️ {et.name}</option>
-            ))}
+            <option value="en" style={{ background: '#0f172a', color: '#fff' }}>🇺🇸 US EN</option>
+            <option value="te" style={{ background: '#0f172a', color: '#fff' }}>🇮🇳 IN తెలుగు</option>
+            <option value="hi" style={{ background: '#0f172a', color: '#fff' }}>🇮🇳 IN हिन्दी</option>
           </select>
 
-          {/* Custom Language Selector */}
-          <div className="lang-selector-container" ref={langMenuRef}>
-            <button
-              type="button"
-              className={`lang-btn-trigger ${showLangMenu ? 'active' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowLangMenu(v => !v);
-              }}
-              title="Select Language"
-            >
-              <span>{activeLang.flag}</span>
-              <span>{activeLang.short}</span>
-              <span style={{ fontSize: '0.6rem', opacity: 0.7, marginLeft: '2px' }}>{showLangMenu ? '▲' : '▼'}</span>
-            </button>
-
-            {showLangMenu && (
-              <div className="lang-dropdown-menu">
-                {LANG_OPTIONS.map(opt => (
-                  <button
-                    key={opt.code}
-                    type="button"
-                    className={`lang-option-btn ${lang === opt.code ? 'selected' : ''}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setLang(opt.code);
-                      localStorage.setItem('app_lang', opt.code);
-                      setShowLangMenu(false);
-                      addSysLog(`Language changed to: ${opt.label} (${opt.code.toUpperCase()})`, 'info');
-                    }}
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span>{opt.flag}</span>
-                      <span>{opt.label}</span>
-                    </span>
-                    {lang === opt.code && <span>✓</span>}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <button
-            type="button"
-            className="header-btn sound"
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            title="Toggle Sound"
-          >
-            <span>{soundEnabled ? `🔊 ${t.sound}` : `🔇 Muted`}</span>
+          <button className="header-btn sound" onClick={() => setSoundEnabled(!soundEnabled)}>
+            <span>{soundEnabled ? `🔊 ${t.sound}: ON` : `🔇 ${t.sound}: OFF`}</span>
           </button>
-          <button
-            type="button"
-            className="header-btn simulate"
-            onClick={triggerSimulation}
-            title="Simulate 25 Votes"
-          >
+          <button className="header-btn simulate" onClick={triggerSimulation}>
             <span>⚡ {t.simulate}</span>
           </button>
-          <button
-            type="button"
-            className="header-btn reset"
-            onClick={resetSimulation}
-            title="Reset Database"
-          >
+          <button className="header-btn reset" onClick={resetSimulation}>
             <span>🔄 {t.reset}</span>
           </button>
-          {userRole ? (
-            <button
-              type="button"
-              className="header-btn"
-              onClick={handleLogout}
-              style={{ background: 'rgba(255,23,68,0.15)', border: '1px solid rgba(255,23,68,0.4)', color: 'var(--danger)' }}
-            >
-              <span>🚪 Logout ({userRole.toUpperCase()})</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="header-btn"
-              onClick={() => {
-                setLoginTarget('admin');
-                setLoginError('');
-                setLoginUsername('');
-                setLoginPassword('');
-                setShowLoginModal(true);
-              }}
-              style={{ background: 'rgba(79,172,254,0.12)', border: '1px solid rgba(79,172,254,0.3)', color: 'var(--primary)' }}
-            >
-              <span>👤 Login</span>
+          {userRole && (
+            <button className="header-btn" onClick={handleLogout} style={{ background: 'rgba(255,23,68,0.15)', border: '1px solid rgba(255,23,68,0.4)', color: 'var(--danger)' }}>
+              <span>🚪 Logout ({userRole})</span>
             </button>
           )}
         </div>
