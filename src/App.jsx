@@ -684,6 +684,14 @@ function App() {
   const [newAdminElec, setNewAdminElec] = useState('general');
   const [adminSetupMsg, setAdminSetupMsg] = useState('');
   const handleTabClick = (tab) => {
+    if ((tab === 'admin' || tab === 'super-admin') && !userRole) {
+      setLoginTarget(tab);
+      setLoginError('');
+      setLoginUsername('');
+      setLoginPassword('');
+      setShowLoginModal(true);
+      return;
+    }
     setActiveTab(tab);
   };
 
@@ -1540,43 +1548,55 @@ function App() {
           >
             <span className="tab-btn-icon">🏆</span> {t.resDecl}
           </button>
+          <button
+            type="button"
+            className={`tab-btn ${activeTab === 'admin' ? 'active' : ''}`}
+            onClick={() => handleTabClick('admin')}
+          >
+            <span className="tab-btn-icon">📋</span> {t.nomPortal}
+          </button>
+          <button
+            type="button"
+            className={`tab-btn ${activeTab === 'super-admin' ? 'active' : ''}`}
+            onClick={() => handleTabClick('super-admin')}
+          >
+            <span className="tab-btn-icon">👑</span> {t.superAdminConsole || 'Super Admin'}
+          </button>
           <a href="/admin" style={{ textDecoration: 'none' }}>
             <button type="button" className="tab-btn">
-              <span className="tab-btn-icon">🔐</span> Admin Portal
+              <span className="tab-btn-icon">🏢</span> Admin Portal
             </button>
           </a>
         </nav>
 
         <div className="header-actions">
-          {userRole === 'superadmin' && (
-            <select 
-              value={activeElectionType} 
-              onChange={(e) => {
-                setActiveElectionType(e.target.value);
-                const firstSymbol = getSymbolsForType(e.target.value)[0];
-                if (firstSymbol) setNomPartySymbol(firstSymbol.symbol);
-                addSysLog(`Active Election Type switched to: ${e.target.value.toUpperCase()}`, 'info');
-                const matched = electionTypes.find(et => et.id === e.target.value);
-                if (matched) speakText(`Switched election to ${matched.name}`);
-              }}
-              className="form-input"
-              style={{ 
-                height: '38px',
-                padding: '0 0.85rem', 
-                width: 'auto', 
-                fontSize: '0.8rem', 
-                borderRadius: '10px', 
-                background: 'rgba(255,255,255,0.05)', 
-                border: '1px solid var(--border-color)', 
-                color: '#fff',
-                cursor: 'pointer'
-              }}
-            >
-              {electionTypes.map(et => (
-                <option key={et.id} value={et.id}>🗳️ {et.name}</option>
-              ))}
-            </select>
-          )}
+          <select 
+            value={activeElectionType} 
+            onChange={(e) => {
+              setActiveElectionType(e.target.value);
+              const firstSymbol = getSymbolsForType(e.target.value)[0];
+              if (firstSymbol) setNomPartySymbol(firstSymbol.symbol);
+              addSysLog(`Active Election Type switched to: ${e.target.value.toUpperCase()}`, 'info');
+              const matched = electionTypes.find(et => et.id === e.target.value);
+              if (matched) speakText(`Switched election to ${matched.name}`);
+            }}
+            className="form-input"
+            style={{ 
+              height: '38px',
+              padding: '0 0.85rem', 
+              width: 'auto', 
+              fontSize: '0.8rem', 
+              borderRadius: '10px', 
+              background: 'rgba(255,255,255,0.05)', 
+              border: '1px solid var(--border-color)', 
+              color: '#fff',
+              cursor: 'pointer'
+            }}
+          >
+            {electionTypes.map(et => (
+              <option key={et.id} value={et.id}>🗳️ {et.name}</option>
+            ))}
+          </select>
 
           {/* Custom Language Selector */}
           <div className="lang-selector-container" ref={langMenuRef}>
@@ -1645,14 +1665,29 @@ function App() {
           >
             <span>🔄 {t.reset}</span>
           </button>
-          {userRole && (
+          {userRole ? (
             <button
               type="button"
               className="header-btn"
               onClick={handleLogout}
               style={{ background: 'rgba(255,23,68,0.15)', border: '1px solid rgba(255,23,68,0.4)', color: 'var(--danger)' }}
             >
-              <span>🚪 Logout</span>
+              <span>🚪 Logout ({userRole.toUpperCase()})</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="header-btn"
+              onClick={() => {
+                setLoginTarget('admin');
+                setLoginError('');
+                setLoginUsername('');
+                setLoginPassword('');
+                setShowLoginModal(true);
+              }}
+              style={{ background: 'rgba(79,172,254,0.12)', border: '1px solid rgba(79,172,254,0.3)', color: 'var(--primary)' }}
+            >
+              <span>👤 Login</span>
             </button>
           )}
         </div>
