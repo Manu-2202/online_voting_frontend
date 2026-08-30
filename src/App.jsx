@@ -1554,12 +1554,6 @@ function App() {
             <button className="header-btn sound" onClick={() => setSoundEnabled(!soundEnabled)} title="Toggle Audio">
               <span>{soundEnabled ? `🔊 ${t.sound}` : `🔇 Muted`}</span>
             </button>
-            <button className="header-btn simulate" onClick={triggerSimulation} title="Simulate 25 Votes">
-              <span>⚡ {t.simulate}</span>
-            </button>
-            <button className="header-btn reset" onClick={resetSimulation} title="Reset Database">
-              <span>🔄 {t.reset}</span>
-            </button>
             <a href="/admin" style={{ textDecoration: 'none' }}>
               <button type="button" className="header-btn" style={{ background: 'rgba(99,102,241,0.2)', borderColor: 'rgba(99,102,241,0.45)', color: '#c7d2fe' }}>
                 <span>🔐 Admin Portal</span>

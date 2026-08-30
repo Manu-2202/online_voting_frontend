@@ -297,6 +297,48 @@ function AdminApp() {
     setElectionStatus(s => s === 'ACTIVE' ? 'LOCKED' : 'ACTIVE');
   };
 
+  const triggerSimulation = () => {
+    const approved = nominations.filter(n => (n.election_type || 'general') === activeElectionType);
+    if (approved.length === 0) {
+      alert('Please approve at least one candidate nomination to run the simulation.');
+      return;
+    }
+    const currentPolls = getDB('polls_db', []);
+    const newSimVotes = [];
+    const now = new Date();
+
+    for (let i = 0; i < 25; i++) {
+      const randomCand = approved[Math.floor(Math.random() * approved.length)];
+      const randomBooth = booths.length > 0 ? booths[Math.floor(Math.random() * booths.length)].booth_number : 'BOOTH-01';
+      newSimVotes.push({
+        poll_id: Date.now() + i,
+        booth_number: randomBooth,
+        candidate_id: randomCand.nomination_id,
+        candidate_name: randomCand.name_of_candidate,
+        party_name: randomCand.party_name,
+        mla_constituency: 'AP-094',
+        vote_time: new Date(now.getTime() - Math.floor(Math.random() * 3600000)).toLocaleTimeString(),
+        election_type: activeElectionType
+      });
+    }
+
+    const updatedPolls = [...currentPolls, ...newSimVotes];
+    setPolls(updatedPolls);
+    setDB('polls_db', updatedPolls);
+    alert('Simulated 25 votes successfully recorded into the database!');
+  };
+
+  const resetSimulation = () => {
+    if (confirm('Are you sure you want to clear all votes and reset the election system?')) {
+      setDB('polls_db', []);
+      setPolls([]);
+      const resetVoters = voters.map(v => ({ ...v, has_voted: false, vote_timestamp: null }));
+      setVoters(resetVoters);
+      setDB('voters_db', resetVoters);
+      alert('Simulation reset complete. Database cleared.');
+    }
+  };
+
   const t = TRANSLATIONS_ADMIN.en;
 
   // ─── Not logged in → show login ──────────────────────────────────────────
@@ -330,6 +372,17 @@ function AdminApp() {
             </div>
           </div>
           <div className="header-actions">
+            <button className="header-btn simulate" onClick={triggerSimulation} title="Simulate 25 Votes">
+              <span>⚡ Simulate 25 Votes</span>
+            </button>
+            <button className="header-btn reset" onClick={resetSimulation} title="Reset Database">
+              <span>🔄 Reset System</span>
+            </button>
+            <a href="/" style={{ textDecoration: 'none' }}>
+              <button className="header-btn" style={{ background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
+                🗳️ Polling Kiosk
+              </button>
+            </a>
             <button className="header-btn" onClick={handleLogout}
               style={{ background: 'rgba(255,23,68,0.15)', border: '1px solid rgba(255,23,68,0.4)', color: 'var(--danger)' }}>
               🚪 Logout
@@ -387,6 +440,12 @@ function AdminApp() {
           </div>
         </div>
         <div className="header-actions">
+          <button className="header-btn simulate" onClick={triggerSimulation} title="Simulate 25 Votes">
+            <span>⚡ Simulate 25 Votes</span>
+          </button>
+          <button className="header-btn reset" onClick={resetSimulation} title="Reset Database">
+            <span>🔄 Reset System</span>
+          </button>
           {/* Election type switcher for super admin */}
           <select
             value={activeElectionType}
@@ -403,6 +462,11 @@ function AdminApp() {
               <option key={et.id} value={et.id}>🗳️ {et.name}</option>
             ))}
           </select>
+          <a href="/" style={{ textDecoration: 'none' }}>
+            <button className="header-btn" style={{ background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
+              🗳️ Polling Kiosk
+            </button>
+          </a>
           <button className="header-btn" onClick={handleLogout}
             style={{ background: 'rgba(255,23,68,0.15)', border: '1px solid rgba(255,23,68,0.4)', color: 'var(--danger)' }}>
             🚪 Logout
