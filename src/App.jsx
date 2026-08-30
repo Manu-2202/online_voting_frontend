@@ -1554,11 +1554,6 @@ function App() {
             <button className="header-btn sound" onClick={() => setSoundEnabled(!soundEnabled)} title="Toggle Audio">
               <span>{soundEnabled ? `🔊 ${t.sound}` : `🔇 Muted`}</span>
             </button>
-            <a href="/admin" style={{ textDecoration: 'none' }}>
-              <button type="button" className="header-btn" style={{ background: 'rgba(99,102,241,0.2)', borderColor: 'rgba(99,102,241,0.45)', color: '#c7d2fe' }}>
-                <span>🔐 Admin Portal</span>
-              </button>
-            </a>
             {userRole && (
               <button className="header-btn" onClick={handleLogout} style={{ background: 'rgba(255,23,68,0.15)', border: '1px solid rgba(255,23,68,0.4)', color: 'var(--danger)' }}>
                 <span>🚪 Logout ({userRole})</span>
