@@ -155,12 +155,202 @@ const SuperAdminPortal = ({
   const [expandedElecType, setExpandedElecType] = useState(null);
   // Which admin row has the edit panel open
   const [editingAdmin, setEditingAdmin] = useState(null);
+  // Active sub-tab in Super Admin Portal
+  const [activeTab, setActiveTab] = useState('vault');
 
   const selectedElecForAdmin = electionTypes.find(et => et.id === newAdminElec);
   const availableSubTypes = selectedElecForAdmin?.subTypes || [];
 
+  const getCandidateTallies = () => {
+    const approved = nominations.filter(n => n.status === 'APPROVED');
+    const voteMap = {};
+    polls.forEach(p => {
+      voteMap[p.candidate_id] = (voteMap[p.candidate_id] || 0) + 1;
+    });
+    return approved.map(c => ({
+      ...c,
+      voteCount: voteMap[c.nomination_id] || 0
+    })).sort((a, b) => b.voteCount - a.voteCount);
+  };
+
+  const candidateTallies = getCandidateTallies();
+  const totalVotes = candidateTallies.reduce((sum, c) => sum + c.voteCount, 0);
+  const winner = candidateTallies.length > 0 && candidateTallies[0].voteCount > 0 ? candidateTallies[0] : null;
+  const runner = candidateTallies.length > 1 && candidateTallies[1].voteCount > 0 ? candidateTallies[1] : null;
+  const margin = winner && runner ? winner.voteCount - runner.voteCount : winner ? winner.voteCount : 0;
+  const turnoutPercent = voters.length > 0 ? ((totalVotes / voters.length) * 100).toFixed(1) : '0.0';
+
   return (
     <section id="super-admin-view" className="view-section active">
+      {/* Super Admin Top Tabs */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <button
+          className={`tab-btn ${activeTab === 'vault' ? 'active' : ''}`}
+          onClick={() => setActiveTab('vault')}
+          style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}
+        >
+          🗃️ Aadhaar Vault & Admins
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'command-center' ? 'active' : ''}`}
+          onClick={() => setActiveTab('command-center')}
+          style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}
+        >
+          📽️ ECI Live Command Center
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`}
+          onClick={() => setActiveTab('results')}
+          style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}
+        >
+          🏆 Results Declaration
+        </button>
+      </div>
+
+      {activeTab === 'command-center' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="analytics-summary" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            <div className="glass-panel stat-card">
+              <div className="stat-icon">🗳️</div>
+              <div className="stat-info">
+                <span className="stat-label">Total Votes Polled</span>
+                <span className="stat-value">{totalVotes}</span>
+              </div>
+            </div>
+            <div className="glass-panel stat-card">
+              <div className="stat-icon">📊</div>
+              <div className="stat-info">
+                <span className="stat-label">Voter Turnout</span>
+                <span className="stat-value">{turnoutPercent}%</span>
+              </div>
+            </div>
+            <div className="glass-panel stat-card">
+              <div className="stat-icon">🏢</div>
+              <div className="stat-info">
+                <span className="stat-label">Active Booths</span>
+                <span className="stat-value">{booths.length}</span>
+              </div>
+            </div>
+            <div className="glass-panel stat-card">
+              <div className="stat-icon">🛡️</div>
+              <div className="stat-info">
+                <span className="stat-label">System Security</span>
+                <span className="stat-value" style={{ color: 'var(--success)' }}>100% OK</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-panel" style={{ padding: '1.5rem' }}>
+            <h3 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>📊 Real-Time Candidate Tallies</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {candidateTallies.map(c => {
+                const percentage = totalVotes > 0 ? ((c.voteCount / totalVotes) * 100).toFixed(1) : 0;
+                return (
+                  <div key={c.nomination_id} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                      <span><strong>{c.name_of_candidate}</strong> ({c.party_name}) {c.party_symbol}</span>
+                      <span style={{ fontWeight: 'bold' }}>{c.voteCount} votes ({percentage}%)</span>
+                    </div>
+                    <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.06)', borderRadius: '5px', overflow: 'hidden' }}>
+                      <div style={{ width: `${percentage}%`, height: '100%', background: 'linear-gradient(90deg, var(--primary), var(--secondary))', transition: 'width 0.4s ease' }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="glass-panel" style={{ padding: '1.5rem' }}>
+            <h3 style={{ marginBottom: '1rem', color: 'var(--secondary)' }}>📹 Live CCTV Booth Surveillance</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+              {booths.map(b => (
+                <div key={b.booth_number} style={{ background: '#020617', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--success)', marginBottom: '5px' }}>
+                    <span>● LIVE FEED</span>
+                    <span>{b.camera_id}</span>
+                  </div>
+                  <div style={{ height: '120px', background: '#090d16', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }}>
+                    <span style={{ fontSize: '2rem', opacity: 0.6 }}>📹</span>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', marginTop: '6px', color: 'var(--text-secondary)' }}>{b.booth_number} — {b.location_name}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'results' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {winner ? (
+            <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', border: '2px solid rgba(255,215,0,0.4)', background: 'linear-gradient(135deg, rgba(255,215,0,0.05), rgba(79,172,254,0.05))' }}>
+              <div style={{ fontSize: '3.5rem', marginBottom: '0.5rem' }}>🏆</div>
+              <h3 style={{ fontSize: '1.3rem', color: '#fbbf24' }}>ELECTED WINNER</h3>
+              <h1 style={{ fontSize: '2rem', color: '#ffffff', margin: '0.5rem 0' }}>{winner.name_of_candidate}</h1>
+              <p style={{ fontSize: '1.1rem', color: 'var(--secondary)' }}>{winner.party_name} {winner.party_symbol}</p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginTop: '1.5rem' }}>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Winner Votes</span>
+                  <h3 style={{ color: 'var(--success)' }}>{winner.voteCount}</h3>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Victory Margin</span>
+                  <h3 style={{ color: 'var(--primary)' }}>+{margin}</h3>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
+              <p style={{ color: 'var(--text-muted)' }}>No votes recorded yet. Start simulation or polling to view official results.</p>
+            </div>
+          )}
+
+          <div className="glass-panel" style={{ padding: '1.5rem' }}>
+            <h3 style={{ marginBottom: '1rem' }}>🏆 Official Vote Share & Margin Registry</h3>
+            <div className="data-table-container">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Candidate</th>
+                    <th>Party</th>
+                    <th>Symbol</th>
+                    <th>Total Votes</th>
+                    <th>Vote Share</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {candidateTallies.map((c, idx) => {
+                    const share = totalVotes > 0 ? ((c.voteCount / totalVotes) * 100).toFixed(1) : 0;
+                    return (
+                      <tr key={c.nomination_id}>
+                        <td><strong>#{idx + 1}</strong></td>
+                        <td><strong>{c.name_of_candidate}</strong></td>
+                        <td>{c.party_name}</td>
+                        <td style={{ fontSize: '1.25rem' }}>{c.party_symbol}</td>
+                        <td><strong>{c.voteCount}</strong></td>
+                        <td>{share}%</td>
+                        <td>
+                          <span style={{
+                            padding: '3px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700,
+                            background: idx === 0 && c.voteCount > 0 ? 'rgba(0,230,118,0.15)' : 'rgba(255,255,255,0.05)',
+                            color: idx === 0 && c.voteCount > 0 ? 'var(--success)' : 'var(--text-muted)'
+                          }}>
+                            {idx === 0 && c.voteCount > 0 ? '🏆 WINNER' : 'RUNNER'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'vault' && (
       <div className="admin-grid-layout" style={{ gridTemplateColumns: '1fr 380px' }}>
         
         {/* Left Column */}
@@ -560,6 +750,7 @@ const SuperAdminPortal = ({
           </div>
         </div>
       </div>
+      )}
     </section>
   );
 };
