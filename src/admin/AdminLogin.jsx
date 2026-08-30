@@ -126,23 +126,6 @@ const AdminLogin = ({ onLogin }) => {
             </p>
           </div>
 
-          {/* Demo credentials hint */}
-          <div style={{
-            background: 'rgba(99,102,241,0.08)',
-            border: '1px solid rgba(99,102,241,0.2)',
-            borderRadius: '12px', padding: '1rem 1.25rem',
-            marginBottom: '1.75rem', fontSize: '0.78rem',
-            display: 'flex', flexDirection: 'column', gap: '6px'
-          }}>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 700, marginBottom: '2px' }}>Demo Credentials</div>
-            <div style={{ color: 'rgba(255,255,255,0.55)' }}>
-              👑 Super Admin: <code style={{ color: '#a5b4fc' }}>superadmin</code> / <code style={{ color: '#a5b4fc' }}>super@123</code>
-            </div>
-            <div style={{ color: 'rgba(255,255,255,0.55)' }}>
-              🏢 Admin: <code style={{ color: '#a5b4fc' }}>admin</code> / <code style={{ color: '#a5b4fc' }}>admin@123</code>
-            </div>
-          </div>
-
           <form onSubmit={handleSubmit} autoComplete="off">
             {/* Username */}
             <div style={{ marginBottom: '1.25rem' }}>

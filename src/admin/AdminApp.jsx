@@ -136,7 +136,8 @@ function AdminApp() {
   const [newAdminUser, setNewAdminUser] = useState('');
   const [newAdminPass, setNewAdminPass] = useState('');
   const [newAdminElec, setNewAdminElec] = useState('general');
-  const [newAdminSubElec, setNewAdminSubElec] = useState(''); // sub-type for admin assignment
+  const [newAdminSubElec, setNewAdminSubElec] = useState('');
+  const [superSelectedElection, setSuperSelectedElection] = useState('all');
   const [adminSetupMsg, setAdminSetupMsg] = useState('');
   const [timezone, setTimezone] = useState('GMT+5:30');
   const [startTime, setStartTime] = useState('07:00');
@@ -145,7 +146,7 @@ function AdminApp() {
   const [auditResults, setAuditResults] = useState({ allPassed: true, rows: null });
 
   // Derive activeElectionType and activeSubType from session
-  const activeElectionType = session?.assignedElectionType || 'general';
+  const activeElectionType = session?.role === 'superadmin' ? superSelectedElection : (session?.assignedElectionType || 'general');
   const activeSubType = session?.assignedSubType || null;
   const activeSubTypeName = session?.assignedSubTypeName || null;
 
@@ -183,6 +184,7 @@ function AdminApp() {
   const submitNomination = (e) => {
     e.preventDefault();
     if (!/^\d{12}$/.test(nomAadhar)) { alert('Aadhaar must be exactly 12 digits.'); return; }
+    const targetElec = activeElectionType === 'all' ? 'general' : activeElectionType;
     const newNom = {
       nomination_id: Date.now(),
       candidate_aadhar_id: nomAadhar,
@@ -197,22 +199,32 @@ function AdminApp() {
       email: nomEmail,
       communication_address: nomCommAddress,
       status: 'APPROVED',
-      election_type: activeElectionType
+      election_type: targetElec
     };
+    if (nominations.some(n => n.candidate_aadhar_id === nomAadhar && n.election_type === targetElec)) {
+      alert('A nomination for this Aadhaar ID already exists in this election.');
+      return;
+    }
     const updated = [...nominations, newNom];
     setNominations(updated);
     setDB('nominations_db', updated);
     setNomSuccess(true);
-    setNomAadhar(''); setNomName(''); setNomPartyName(''); setNomTxnNum(''); setNomMobile(''); setNomEmail(''); setNomCommAddress('');
+    setNomAadhar(''); setNomName(''); setNomPartyName('');
+    setNomTxnNum(''); setNomMobile(''); setNomEmail(''); setNomCommAddress('');
   };
 
   const createNewBooth = (e) => {
     e.preventDefault();
+    if (!newBoothId || !newBoothLocation || !newBoothIp || !newBoothCamera) {
+      alert('All booth configuration inputs are required.');
+      return;
+    }
+    const targetElec = activeElectionType === 'all' ? 'general' : activeElectionType;
     const newBooth = {
       booth_number: newBoothId, location_name: newBoothLocation,
       mla_constituency_code: 'AP-094', mp_constituency_code: 'MP-05',
       camera_id: newBoothCamera, ip_address: newBoothIp,
-      agent_name: 'TBD', election_type: activeElectionType
+      agent_name: 'Duty Security Officer', election_type: targetElec
     };
     const updated = [...booths, newBooth];
     setBooths(updated);
@@ -222,44 +234,45 @@ function AdminApp() {
 
   const handleCreateElectionType = (e) => {
     e.preventDefault();
-    if (electionTypes.some(et => et.id === newElecId)) { alert('Election type ID already exists.'); return; }
-    const updated = [...electionTypes, { id: newElecId, name: newElecName, desc: newElecDesc, subTypes: [] }];
+    if (!newElecId.trim() || !newElecName.trim()) { alert('ID and Name are required.'); return; }
+    const id = newElecId.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (electionTypes.some(et => et.id === id)) { alert('Election type ID already exists.'); return; }
+    const newET = { id, name: newElecName.trim(), desc: newElecDesc.trim() || 'Custom election category.', subTypes: [] };
+    const updated = [...electionTypes, newET];
     setElectionTypes(updated);
     setDB('election_types_db', updated);
     setNewElecId(''); setNewElecName(''); setNewElecDesc('');
   };
 
-  // Add a sub-type to an EXISTING election type
   const addSubTypeToExisting = (elecTypeId, subId, subName) => {
     const updated = electionTypes.map(et => {
       if (et.id !== elecTypeId) return et;
       const existing = et.subTypes || [];
-      if (existing.some(s => s.id === subId)) { alert('Sub-type ID already exists for this election type.'); return et; }
+      if (existing.some(s => s.id === subId)) { alert('Sub-type ID already exists in this election type.'); return et; }
       return { ...et, subTypes: [...existing, { id: subId, name: subName }] };
     });
     setElectionTypes(updated);
     setDB('election_types_db', updated);
   };
 
-  // Remove an existing admin account
   const removeAdmin = (username) => {
-    if (!window.confirm(`Remove admin "${username}"? This cannot be undone.`)) return;
+    if (username === 'superadmin') { alert('Cannot remove default superadmin.'); return; }
     const updated = adminCredentials.filter(c => c.username !== username);
     setAdminCredentials(updated);
     localStorage.setItem('admin_credentials', JSON.stringify(updated));
   };
 
-  // Update an existing admin's election type + sub-type assignment
   const updateAdminAccess = (username, newElecType, newSubType) => {
-    const elType = electionTypes.find(et => et.id === newElecType);
-    const subTypeObj = (elType?.subTypes || []).find(s => s.id === newSubType);
+    const subTypeLabel = newSubType
+      ? (electionTypes.find(et => et.id === newElecType)?.subTypes || []).find(s => s.id === newSubType)?.name || newSubType
+      : null;
     const updated = adminCredentials.map(c => {
       if (c.username !== username) return c;
       return {
         ...c,
         assignedElectionType: newElecType,
         assignedSubType: newSubType || null,
-        assignedSubTypeName: subTypeObj?.name || null
+        assignedSubTypeName: subTypeLabel || null
       };
     });
     setAdminCredentials(updated);
@@ -298,9 +311,13 @@ function AdminApp() {
   };
 
   const triggerSimulation = () => {
-    const approved = nominations.filter(n => (n.election_type || 'general') === activeElectionType);
-    if (approved.length === 0) {
-      alert('Please approve at least one candidate nomination to run the simulation.');
+    const currentElection = activeElectionType;
+    let pool = nominations.filter(n => n.status === 'APPROVED');
+    if (currentElection !== 'all') {
+      pool = pool.filter(n => (n.election_type || 'general') === currentElection);
+    }
+    if (pool.length === 0) {
+      alert(`Please approve at least one candidate nomination in ${currentElection === 'all' ? 'the system' : currentElection} to run the simulation.`);
       return;
     }
     const currentPolls = getDB('polls_db', []);
@@ -308,8 +325,10 @@ function AdminApp() {
     const now = new Date();
 
     for (let i = 0; i < 25; i++) {
-      const randomCand = approved[Math.floor(Math.random() * approved.length)];
-      const randomBooth = booths.length > 0 ? booths[Math.floor(Math.random() * booths.length)].booth_number : 'BOOTH-01';
+      const randomCand = pool[Math.floor(Math.random() * pool.length)];
+      const targetElec = randomCand.election_type || 'general';
+      const availableBooths = booths.filter(b => (b.election_type || 'general') === targetElec);
+      const randomBooth = availableBooths.length > 0 ? availableBooths[Math.floor(Math.random() * availableBooths.length)].booth_number : 'BOOTH-01';
       newSimVotes.push({
         poll_id: Date.now() + i,
         booth_number: randomBooth,
@@ -318,14 +337,14 @@ function AdminApp() {
         party_name: randomCand.party_name,
         mla_constituency: 'AP-094',
         vote_time: new Date(now.getTime() - Math.floor(Math.random() * 3600000)).toLocaleTimeString(),
-        election_type: activeElectionType
+        election_type: targetElec
       });
     }
 
     const updatedPolls = [...currentPolls, ...newSimVotes];
     setPolls(updatedPolls);
     setDB('polls_db', updatedPolls);
-    alert('Simulated 25 votes successfully recorded into the database!');
+    alert(`Simulated 25 votes successfully recorded into ${currentElection === 'all' ? 'the database' : currentElection.toUpperCase()}!`);
   };
 
   const resetSimulation = () => {
@@ -350,7 +369,6 @@ function AdminApp() {
   if (session.role === 'admin') {
     return (
       <div className="app-container">
-        {/* Mini header for admin */}
         <header className="app-header" style={{ padding: '0.75rem 1.5rem' }}>
           <div className="logo-section">
             <div className="logo-icon">AV</div>
@@ -427,7 +445,6 @@ function AdminApp() {
   // ─── Super Admin Portal ───────────────────────────────────────────────────
   return (
     <div className="app-container">
-      {/* Mini header for super admin */}
       <header className="app-header" style={{ padding: '0.75rem 1.5rem' }}>
         <div className="logo-section">
           <div className="logo-icon">AV</div>
@@ -436,6 +453,11 @@ function AdminApp() {
             <p style={{ fontSize: '0.7rem' }}>
               Logged in as: <strong style={{ color: 'var(--warning)' }}>{session.username}</strong>
               &nbsp;|&nbsp; <span style={{ color: 'var(--warning)' }}>Full Access</span>
+              {superSelectedElection !== 'all' && (
+                <>
+                  &nbsp;|&nbsp; Active Scope: <strong style={{ color: 'var(--secondary)' }}>{superSelectedElection.toUpperCase()}</strong>
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -446,10 +468,9 @@ function AdminApp() {
           <button className="header-btn reset" onClick={resetSimulation} title="Reset Database">
             <span>🔄 Reset System</span>
           </button>
-          {/* Election type switcher for super admin */}
           <select
-            value={activeElectionType}
-            onChange={() => {}}
+            value={superSelectedElection}
+            onChange={(e) => setSuperSelectedElection(e.target.value)}
             className="form-input"
             style={{
               padding: '0.4rem 1.5rem 0.4rem 0.75rem', width: 'auto',
@@ -458,6 +479,7 @@ function AdminApp() {
               color: '#fff', cursor: 'pointer', marginRight: '8px'
             }}
           >
+            <option value="all">🌐 All Elections (Overview)</option>
             {electionTypes.map(et => (
               <option key={et.id} value={et.id}>🗳️ {et.name}</option>
             ))}
@@ -478,6 +500,8 @@ function AdminApp() {
           t={t}
           voters={voters}
           electionTypes={electionTypes}
+          activeElectionType={activeElectionType}
+          setActiveElectionType={setSuperSelectedElection}
           newElecId={newElecId} setNewElecId={setNewElecId}
           newElecName={newElecName} setNewElecName={setNewElecName}
           newElecDesc={newElecDesc} setNewElecDesc={setNewElecDesc}
@@ -502,6 +526,25 @@ function AdminApp() {
           nominations={nominations}
           booths={booths}
           polls={polls}
+          auditNomination={auditNomination}
+          createNewBooth={createNewBooth}
+          newBoothId={newBoothId} setNewBoothId={setNewBoothId}
+          newBoothLocation={newBoothLocation} setNewBoothLocation={setNewBoothLocation}
+          newBoothIp={newBoothIp} setNewBoothIp={setNewBoothIp}
+          newBoothCamera={newBoothCamera} setNewBoothCamera={setNewBoothCamera}
+          nomSuccess={nomSuccess} setNomSuccess={setNomSuccess}
+          submitNomination={submitNomination}
+          nomAadhar={nomAadhar} setNomAadhar={setNomAadhar}
+          nomName={nomName} setNomName={setNomName}
+          nomPartyName={nomPartyName} setNomPartyName={setNomPartyName}
+          nomPartySymbol={nomPartySymbol} setNomPartySymbol={setNomPartySymbol}
+          getSymbolsForType={getSymbolsForType}
+          nomPhoto={nomPhoto} setNomPhoto={setNomPhoto}
+          nomTxnNum={nomTxnNum} setNomTxnNum={setNomTxnNum}
+          nomPaidDate={nomPaidDate} setNomPaidDate={setNomPaidDate}
+          nomMobile={nomMobile} setNomMobile={setNomMobile}
+          nomEmail={nomEmail} setNomEmail={setNomEmail}
+          nomCommAddress={nomCommAddress} setNomCommAddress={setNomCommAddress}
         />
       </main>
     </div>
