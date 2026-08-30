@@ -1513,68 +1513,70 @@ function App() {
       {/* HEADER & NAVIGATION                        */}
       {/* ========================================== */}
       <header className="app-header">
-        <div className="header-brand">
-          <div className="brand-badge">
-            <span style={{ fontSize: '1.25rem' }}>🏛️</span>
-          </div>
-          <div className="brand-info">
-            <div className="brand-title">
-              <span>AADHAAR</span>
-              <span className="brand-tag">VOTEX</span>
+        <div className="header-inner">
+          <div className="header-brand">
+            <div className="brand-badge">
+              <span style={{ fontSize: '1.25rem' }}>🏛️</span>
             </div>
-            <span className="brand-subtitle">{t.subtitle || 'Automated Secure Democracy'}</span>
+            <div className="brand-info">
+              <div className="brand-title">
+                <span>AADHAAR</span>
+                <span className="brand-tag">VOTEX</span>
+              </div>
+              <span className="brand-subtitle">{t.subtitle || 'Automated Secure Democracy'}</span>
+            </div>
           </div>
-        </div>
 
-        <nav className="role-tabs">
-          <button className={`tab-btn ${activeTab === 'voter' ? 'active' : ''}`} onClick={() => handleTabClick('voter')}>
-            <span>🗳️</span> {t.kiosk}
-          </button>
-          <button className={`tab-btn ${activeTab === 'observer' ? 'active' : ''}`} onClick={() => handleTabClick('observer')}>
-            <span>📽️</span> {t.commandCenter}
-          </button>
-          <button className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`} onClick={() => handleTabClick('results')}>
-            <span>🏆</span> {t.resDecl}
-          </button>
-          <a href="/admin" style={{ textDecoration: 'none' }}>
-            <button type="button" className="tab-btn">
-              <span>🔐</span> Admin Portal
+          <nav className="role-tabs">
+            <button className={`tab-btn ${activeTab === 'voter' ? 'active' : ''}`} onClick={() => handleTabClick('voter')}>
+              <span>🗳️</span> {t.kiosk}
             </button>
-          </a>
-        </nav>
-
-        <div className="header-actions">
-          {/* Language Selector */}
-          <select
-            value={lang}
-            onChange={(e) => {
-              const newLang = e.target.value;
-              setLang(newLang);
-              localStorage.setItem('app_lang', newLang);
-              addSysLog(`Language changed to: ${newLang.toUpperCase()}`, 'info');
-            }}
-            className="header-select"
-            title="Select Language"
-          >
-            <option value="en" style={{ background: '#0f172a', color: '#fff' }}>🌐 English</option>
-            <option value="te" style={{ background: '#0f172a', color: '#fff' }}>🇮🇳 తెలుగు (Telugu)</option>
-            <option value="hi" style={{ background: '#0f172a', color: '#fff' }}>🇮🇳 हिन्दी (Hindi)</option>
-          </select>
-
-          <button className="header-btn sound" onClick={() => setSoundEnabled(!soundEnabled)} title="Toggle Audio">
-            <span>{soundEnabled ? `🔊 ${t.sound}` : `🔇 Muted`}</span>
-          </button>
-          <button className="header-btn simulate" onClick={triggerSimulation} title="Simulate 25 Votes">
-            <span>⚡ {t.simulate}</span>
-          </button>
-          <button className="header-btn reset" onClick={resetSimulation} title="Reset Database">
-            <span>🔄 {t.reset}</span>
-          </button>
-          {userRole && (
-            <button className="header-btn" onClick={handleLogout} style={{ background: 'rgba(255,23,68,0.15)', border: '1px solid rgba(255,23,68,0.4)', color: 'var(--danger)' }}>
-              <span>🚪 Logout ({userRole})</span>
+            <button className={`tab-btn ${activeTab === 'observer' ? 'active' : ''}`} onClick={() => handleTabClick('observer')}>
+              <span>📽️</span> {t.commandCenter}
             </button>
-          )}
+            <button className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`} onClick={() => handleTabClick('results')}>
+              <span>🏆</span> {t.resDecl}
+            </button>
+            <a href="/admin" style={{ textDecoration: 'none' }}>
+              <button type="button" className="tab-btn">
+                <span>🔐</span> Admin Portal
+              </button>
+            </a>
+          </nav>
+
+          <div className="header-actions">
+            {/* Language Selector */}
+            <select
+              value={lang}
+              onChange={(e) => {
+                const newLang = e.target.value;
+                setLang(newLang);
+                localStorage.setItem('app_lang', newLang);
+                addSysLog(`Language changed to: ${newLang.toUpperCase()}`, 'info');
+              }}
+              className="header-select"
+              title="Select Language"
+            >
+              <option value="en" style={{ background: '#0f172a', color: '#fff' }}>🌐 English</option>
+              <option value="te" style={{ background: '#0f172a', color: '#fff' }}>🇮🇳 తెలుగు (Telugu)</option>
+              <option value="hi" style={{ background: '#0f172a', color: '#fff' }}>🇮🇳 हिन्दी (Hindi)</option>
+            </select>
+
+            <button className="header-btn sound" onClick={() => setSoundEnabled(!soundEnabled)} title="Toggle Audio">
+              <span>{soundEnabled ? `🔊 ${t.sound}` : `🔇 Muted`}</span>
+            </button>
+            <button className="header-btn simulate" onClick={triggerSimulation} title="Simulate 25 Votes">
+              <span>⚡ {t.simulate}</span>
+            </button>
+            <button className="header-btn reset" onClick={resetSimulation} title="Reset Database">
+              <span>🔄 {t.reset}</span>
+            </button>
+            {userRole && (
+              <button className="header-btn" onClick={handleLogout} style={{ background: 'rgba(255,23,68,0.15)', border: '1px solid rgba(255,23,68,0.4)', color: 'var(--danger)' }}>
+                <span>🚪 Logout ({userRole})</span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
