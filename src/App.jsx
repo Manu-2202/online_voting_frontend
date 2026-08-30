@@ -1528,20 +1528,9 @@ function App() {
           </div>
 
           <nav className="role-tabs">
-            <button className={`tab-btn ${activeTab === 'voter' ? 'active' : ''}`} onClick={() => handleTabClick('voter')}>
+            <button className="tab-btn active" onClick={() => handleTabClick('voter')}>
               <span>🗳️</span> {t.kiosk}
             </button>
-            <button className={`tab-btn ${activeTab === 'observer' ? 'active' : ''}`} onClick={() => handleTabClick('observer')}>
-              <span>📽️</span> {t.commandCenter}
-            </button>
-            <button className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`} onClick={() => handleTabClick('results')}>
-              <span>🏆</span> {t.resDecl}
-            </button>
-            <a href="/admin" style={{ textDecoration: 'none' }}>
-              <button type="button" className="tab-btn">
-                <span>🔐</span> Admin Portal
-              </button>
-            </a>
           </nav>
 
           <div className="header-actions">
@@ -1571,6 +1560,11 @@ function App() {
             <button className="header-btn reset" onClick={resetSimulation} title="Reset Database">
               <span>🔄 {t.reset}</span>
             </button>
+            <a href="/admin" style={{ textDecoration: 'none' }}>
+              <button type="button" className="header-btn" style={{ background: 'rgba(99,102,241,0.2)', borderColor: 'rgba(99,102,241,0.45)', color: '#c7d2fe' }}>
+                <span>🔐 Admin Portal</span>
+              </button>
+            </a>
             {userRole && (
               <button className="header-btn" onClick={handleLogout} style={{ background: 'rgba(255,23,68,0.15)', border: '1px solid rgba(255,23,68,0.4)', color: 'var(--danger)' }}>
                 <span>🚪 Logout ({userRole})</span>

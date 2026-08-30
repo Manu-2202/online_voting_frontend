@@ -363,6 +363,8 @@ function AdminApp() {
             nomMobile={nomMobile} setNomMobile={setNomMobile}
             nomEmail={nomEmail} setNomEmail={setNomEmail}
             nomCommAddress={nomCommAddress} setNomCommAddress={setNomCommAddress}
+            polls={polls}
+            voters={voters}
           />
         </main>
       </div>
